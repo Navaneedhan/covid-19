@@ -21,10 +21,55 @@ export default {
 
       let confirmedCasesDaily = dailyData.filter((data) => { return !isNaN(parseInt(data.dailyconfirmed)) }).map(data => parseInt(data.dailyconfirmed))
 
-      let todaysData = todayStats.filter((data) => { return data.state === 'Total' })[0].confirmed
-      // let lastDayCases = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 1]
-      // console.log(lastDayCases)
-      confirmedCasesDailyCumm.push(parseInt(todaysData))
+      // Live data
+      let todaysConfirmedData = todayStats.filter((data) => { return data.state === 'Total' })[0].confirmed
+
+      // yesterday's data for prediction
+      let yesDen = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 2]
+      let yesNum = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 1]
+      let yesterDaysGrowthRatio = yesNum / yesDen
+
+      const oneDay = 24 * 60 * 60 * 1000
+      const targetDate = new Date('march 31 2020')
+      let yesDate = new Date()
+      yesDate.setDate(yesDate.getDate() - 1)
+
+      let toDate = new Date()
+
+      let yesNoOfDays = Math.round(Math.abs((targetDate - yesDate) / oneDay))
+      let toNoOfDays = Math.round(Math.abs((targetDate - toDate) / oneDay))
+
+      let i
+      let yesPredictions = []
+      yesPredictions.push(confirmedCasesDailyCumm)
+      yesPredictions = yesPredictions.flat()
+      let a = yesNum
+      for (i = 1; i <= yesNoOfDays; i++) {
+        yesPredictions.push(a * Math.pow(yesterDaysGrowthRatio, i))
+        a = yesPredictions[yesPredictions.length - 1]
+      }
+
+      console.log(confirmedCasesDailyCumm)
+      console.log(yesPredictions)
+      console.log(toNoOfDays)
+
+      // today's data for prediction
+      confirmedCasesDailyCumm.push(parseInt(todaysConfirmedData))
+      let todayDen = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 2]
+      let todayNum = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 1]
+      let latestDaysGrowthRatio = todayNum / todayDen
+
+      let toPredictions = []
+      toPredictions.push(confirmedCasesDailyCumm)
+      toPredictions = toPredictions.flat()
+      a = todayNum
+      for (i = 1; i <= toNoOfDays; i++) {
+        toPredictions.push(a * Math.pow(latestDaysGrowthRatio, i))
+        a = toPredictions[toPredictions.length - 1]
+      }
+
+      console.log(yesterDaysGrowthRatio)
+      console.log(latestDaysGrowthRatio)
       this.chartOptionsCumm = {
         title: {
           text: 'Covid-19 cases Cummulative'
@@ -34,9 +79,22 @@ export default {
         },
         series: [
           {
+            name: 'Last day prediction',
+            type: 'spline',
+            data: yesPredictions,
+            color: 'black'
+          },
+          {
+            name: 'Today\'s prediction',
+            type: 'spline',
+            data: toPredictions,
+            color: 'red'
+          },
+          {
             name: 'Covid-19 Cases',
             type: 'spline',
-            data: confirmedCasesDailyCumm
+            data: confirmedCasesDailyCumm,
+            color: 'violet'
           }
         ],
         xAxis: {
@@ -45,6 +103,9 @@ export default {
           }
         },
         yAxis: {
+          tickInterval: 10,
+          min: 0,
+          minRange: 0,
           title: {
             text: 'Cases'
           }
