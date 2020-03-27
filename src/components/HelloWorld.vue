@@ -16,9 +16,15 @@ export default {
   created () {
     axios.get('https://api.covid19india.org/data.json').then((resp) => {
       let dailyData = resp.data.cases_time_series
+      let todayStats = resp.data.statewise
       let confirmedCasesDailyCumm = dailyData.filter((data) => { return !isNaN(parseInt(data.totalconfirmed)) }).map(data => parseInt(data.totalconfirmed))
 
       let confirmedCasesDaily = dailyData.filter((data) => { return !isNaN(parseInt(data.dailyconfirmed)) }).map(data => parseInt(data.dailyconfirmed))
+
+      let todaysData = todayStats.filter((data) => { return data.state === 'Total' })[0].confirmed
+      // let lastDayCases = confirmedCasesDailyCumm[confirmedCasesDailyCumm.length - 1]
+      // console.log(lastDayCases)
+      confirmedCasesDailyCumm.push(parseInt(todaysData))
       this.chartOptionsCumm = {
         title: {
           text: 'Covid-19 cases Cummulative'
